@@ -599,4 +599,10 @@ builders = {'home': build_home, 'about': build_about, 'cc': build_cc, 'ml': buil
 for k, fn in builders.items():
     open(os.path.join(OUT, PAGES[k]), 'w', encoding='utf-8').write(finish(fn()))
 open(os.path.join(OUT, '404.html'), 'w', encoding='utf-8').write(finish(build_404()))
+
+# sitemap.xml + robots.txt (set DOMAIN to the live .com, no trailing slash)
+DOMAIN = 'https://YOUR-DOMAIN.com'
+urls = ''.join(f'  <url><loc>{DOMAIN}/{"" if k == "home" else PAGES[k]}</loc></url>\n' for k in builders)
+open(os.path.join(OUT, 'sitemap.xml'), 'w', encoding='utf-8').write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls + '</urlset>\n')
+open(os.path.join(OUT, 'robots.txt'), 'w', encoding='utf-8').write(f'User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n')
 print('built', len(builders) + 1, 'pages')
