@@ -1,28 +1,89 @@
-# ELVORRA OPERATIONS — website
+# ELVORRA OPERATIONS — Website
 
-Static 8-page site (plus 404). No build step needed to deploy: upload the `site/` folder.
+Official website for **ELVORRA OPERATIONS**, an international BPO, call centre and managed business operations company based in Abuja, Nigeria.
+
+*Global Reach. Operational Excellence. Human-Centred Service.*
+
+Repository: https://github.com/LaGoodiee/Elvorra
+
+## What's inside
+
+A static site (plain HTML, CSS and JavaScript). No framework and no build step is needed to deploy.
+
+```
+site/                      <- the website (deploy this folder)
+  index.html               Home
+  about.html               About
+  call-centre-customer-support.html
+  multilingual-24-7-support.html
+  back-office-administrative.html
+  crm-case-management-qa.html
+  managed-bpo-teams-partnerships.html
+  contact.html             Contact / Request a Proposal / Book a Consultation
+  404.html
+  robots.txt, netlify.toml
+  assets/
+    style.css              all styles (light + dark mode, responsive)
+    main.js                menu, theme toggle, animations, globe, contact form
+    config.js              EDIT THIS: email, WhatsApp, booking link, form endpoint
+    land.js, logo.png, favicon.png, apple-touch-icon.png
+apps-script/Code.gs        form receiver (Google Apps Script)
+build_site.py              optional page generator (see "Editing")
+v3.html                    homepage template used by the generator
+```
 
 ## Deploy (Netlify)
-1. Drag the `site/` folder into app.netlify.com > Add new site > Deploy manually (or connect the GitHub repo, publish dir `site`).
-2. Add the client's .com domain under Domain settings. HTTPS is automatic.
 
-## Before going live (client must approve)
-- **Remove noindex:** delete the `<meta name="robots" ...>` line from every page (or in `build_site.py`, then rerun it) and replace `site/robots.txt` with `User-agent: *\nAllow: /`.
-- **Forms:** see below, then test BOTH "Request a Proposal" and "Book a Consultation" and confirm the email arrives.
-- **WhatsApp:** set `whatsapp` in `site/assets/config.js` (digits only, with country code, e.g. `2348012345678`). Until set, WhatsApp buttons link to the contact page.
-- **Calendly/booking link:** set `calendly` in `config.js`; "Book a Consultation" buttons then open it.
-- **Photos:** images are hotlinked from Unsplash. Replace with the client's own photos (or download and host them) before launch.
+1. Go to app.netlify.com > Add new site > Import from GitHub and pick this repo.
+2. Set **Publish directory** to `site`. Leave the build command empty.
+3. Add the client's .com domain under Domain settings. HTTPS is automatic.
 
-## Make the form send email (free)
-1. Go to script.google.com > New project, paste `apps-script/Code.gs`.
-2. Set `NOTIFY_EMAIL` (and optional `SHEET_ID` to log rows).
-3. Deploy > New deployment > Web app > Execute as: Me, Access: Anyone. Authorise when asked.
-4. Copy the `/exec` URL into `endpoint` in `site/assets/config.js`.
-Without an endpoint the form falls back to opening the visitor's email app addressed to the business email.
+(Alternative: drag the `site/` folder into Netlify's manual deploy box.)
+
+## Settings: `site/assets/config.js`
+
+```js
+window.ELV_CONFIG = {
+  email: "elevoraoperation@gmail.com",  // shown on the site and used as mailto fallback
+  whatsapp: "",   // digits only with country code, e.g. "2348012345678"
+  calendly: "",   // booking link; "Book a Consultation" opens it when set
+  endpoint: ""    // Google Apps Script /exec URL (see below)
+};
+```
+
+Until `whatsapp` is set, WhatsApp buttons link to the contact page. Until `endpoint` is set, the form opens the visitor's email app instead of sending directly.
+
+## Make the contact form send email (free)
+
+1. Go to script.google.com > New project and paste in `apps-script/Code.gs`.
+2. Set `NOTIFY_EMAIL` (and optionally `SHEET_ID` to log every enquiry in a Google Sheet).
+3. Deploy > New deployment > Web app. Execute as **Me**, access **Anyone**. Authorise when asked.
+4. Copy the `/exec` URL into `endpoint` in `config.js`, then commit and redeploy.
+5. **Test both modes** ("Request a Proposal" and "Book a Consultation") and confirm the email arrives.
+
+## Search engine indexing
+
+The site is **set to be indexed** (`index, follow` on every page and `robots.txt` allows all). If you need to keep a staging copy private, add `<meta name="robots" content="noindex, nofollow">` to the page head (or in `head()` in `build_site.py`) and set `robots.txt` to `Disallow: /`.
+
+Once the domain is live, also consider adding a `sitemap.xml` and submitting the site in Google Search Console.
 
 ## Editing
-Edit pages via `build_site.py` then run `python3 build_site.py`, or edit the HTML in `site/` directly (the generator overwrites them).
-Styles: `site/assets/style.css`. Behaviour: `site/assets/main.js`. Settings: `site/assets/config.js`.
 
-## Handover checklist
-Client owns the domain, GitHub repo, Netlify/hosting and Google Apps Script accounts; share admin access to them.
+- **Quick text edits:** change the HTML files in `site/` directly.
+- **Larger changes:** edit `build_site.py` (shared header, footer and all page content) and run `python3 build_site.py`. This regenerates every HTML file in `site/` and overwrites manual edits to them, so use one approach or the other.
+- **Styles:** `site/assets/style.css`. **Behaviour:** `site/assets/main.js`.
+- **Photos:** images are hotlinked from Unsplash (IDs in `build_site.py`). Replace them with the client's own photos before or soon after launch.
+
+## Pre-launch checklist
+
+- [ ] Client has approved the content and wording (response time promise, engagement models, languages offered, whether "Aviation & Travel Support" is a service)
+- [ ] Business email spelling confirmed
+- [ ] WhatsApp number and booking link added to `config.js`
+- [ ] Form endpoint deployed and tested in both modes
+- [ ] Photos replaced or confirmed
+- [ ] Custom domain connected and HTTPS working
+- [ ] Checked on a real phone in light and dark mode
+
+## Ownership and handover
+
+The client owns the domain, this GitHub repository, hosting (Netlify) and the Google Apps Script project. Share admin access to each at handover. 30 days of free edits are included per the agreement.

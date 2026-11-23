@@ -126,8 +126,7 @@ def head(key, extra=''):
 <title>{esc(t)}</title>
 <meta name="description" content="{esc(d)}">
 <meta name="theme-color" content="#061229">
-<!-- PRIVATE PREVIEW: remove the next line when the client approves publishing -->
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ELVORRA OPERATIONS">
 <meta property="og:title" content="{esc(t)}">
