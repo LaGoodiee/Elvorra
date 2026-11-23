@@ -3,7 +3,7 @@
 import re, os, shutil, html
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(ROOT, 'site')
+OUT = os.path.join(ROOT, 'docs')
 v3 = open(os.path.join(ROOT, 'v3.html'), encoding='utf-8').read()
 
 # ---------------------------------------------------------------- assets
