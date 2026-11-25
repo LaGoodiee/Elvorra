@@ -14,7 +14,7 @@ var HOVER=window.matchMedia&&matchMedia('(hover:hover)').matches;
   var num=(CFG.whatsapp||'').replace(/\D/g,'');
   $$('[data-wa]').forEach(function(el){
     if(num){el.href='https://wa.me/'+num+'?text='+encodeURIComponent('Hello ELVORRA OPERATIONS, I would like to discuss outsourcing support for my business.');el.target='_blank';el.rel='noopener'}
-    else{el.href=el.getAttribute('data-wa-fallback')||'contact.html#whatsapp'}
+    else{var h=el.closest('li')||el;h.style.display='none';h.setAttribute('aria-hidden','true')}
   });
   $$('[data-consult]').forEach(function(el){
     if(CFG.calendly){el.href=CFG.calendly;el.target='_blank';el.rel='noopener'}
@@ -182,9 +182,9 @@ $$('.faq details').forEach(function(d){d.addEventListener('toggle',function(){if
 /* ---------- lead form (contact page) ---------- */
 (function(){
   var card=$('#lead');if(!card)return;
-  var form=$('#leadform'),step=1,mode='proposal';
+  var form=$('#leadform'),step=1,mode='proposal',t0=Date.now(),sending=false;
   var titles={proposal:['What do you need?','Tell us about the operation','Your details'],consult:['What shall we discuss?','When suits you?','Your details']};
-  var hints={proposal:'Select every service you are interested in.',consult:'Choose the topics you would like to cover on the call.'};
+  var hints={proposal:'Choose your enquiry type, then select the services you are interested in.',consult:'Choose what you would like to discuss, then the topics to cover on the call.'};
   function setMode(m){
     mode=m;card.dataset.mode=m;
     $$('.mode button').forEach(function(b){b.classList.toggle('on',b.dataset.mode===m);b.setAttribute('aria-pressed',b.dataset.mode===m)});
@@ -205,62 +205,75 @@ $$('.faq details').forEach(function(d){d.addEventListener('toggle',function(){if
   function err(msg,el){var e=$('#err');e.textContent=msg;e.classList.add('show');if(el){el.classList.add('bad');el.focus()}}
   function clearErr(){var e=$('#err');e.classList.remove('show');$$('.bad',form).forEach(function(x){x.classList.remove('bad')})}
   $$('.mode button').forEach(function(b){b.addEventListener('click',function(){step=1;setMode(b.dataset.mode)})});
-  $$('.opts',form).forEach(function(g){g.addEventListener('click',function(e){var o=e.target.closest('.opt');if(!o)return;
-    if(g.hasAttribute('data-single')){var was=o.classList.contains('sel');$$('.opt',g).forEach(function(x){x.classList.remove('sel')});if(!was)o.classList.add('sel')}else o.classList.toggle('sel');clearErr()})});
+  $$('.opts',form).forEach(function(g){
+    g.addEventListener('click',function(e){var o=e.target.closest('.opt');if(!o)return;
+      if(g.hasAttribute('data-single')){var was=o.classList.contains('sel');$$('.opt',g).forEach(function(x){x.classList.remove('sel')});if(!was)o.classList.add('sel')}else o.classList.toggle('sel');clearErr()});
+    g.addEventListener('keydown',function(e){if((e.key===' '||e.key==='Enter')&&e.target.classList&&e.target.classList.contains('opt')){e.preventDefault();e.stopPropagation();e.target.click()}});
+  });
   function vals(name){var g=$('[data-name="'+name+'"]',form);return g?$$('.opt.sel',g).map(function(o){return o.textContent.trim()}):[]}
-  function collect(){
-    var f=form.elements;
-    return {type:mode==='proposal'?'Proposal request':'Consultation request',services:vals('services'),teamSize:vals('teamSize').join(', '),coverage:vals('coverage').join(', '),languages:vals('languages'),
-      preferredDate:f.date.value,preferredTime:f.time.value,timezone:f.timezone.value,
-      name:f.name.value.trim(),company:f.company.value.trim(),email:f.email.value.trim(),country:f.country.value,message:f.message.value.trim(),
-      website:f.website.value,page:location.href,submitted:new Date().toISOString()}
+  function makeRef(){return 'ELV-'+Date.now().toString(36).toUpperCase().slice(-6)+Math.random().toString(36).slice(2,5).toUpperCase()}
+  function collect(ref){
+    var f=form.elements,get=function(n){return f[n]?String(f[n].value||'').trim():''};
+    return {ref:ref,mode:mode,type:mode==='proposal'?'Proposal request':'Consultation request',
+      enquiryType:vals('enquiryType').join(', '),services:vals('services'),
+      teamSize:vals('teamSize').join(', '),coverage:vals('coverage').join(', '),languages:vals('languages'),
+      startDate:get('startDate'),hours:get('hours'),preferredDate:get('date'),preferredTime:get('time'),timezone:get('timezone'),
+      name:get('name'),jobTitle:get('jobTitle'),company:get('company'),email:get('email'),phone:get('phone'),country:get('country'),message:get('message'),
+      consent:!!f.consent.checked,website:f.website.value,elapsed:Date.now()-t0,page:location.href,submitted:new Date().toISOString()};
   }
   function validate3(){
     var f=form.elements;
     if(!f.name.value.trim()){err('Please enter your full name.',f.name);return false}
     if(!f.company.value.trim()){err('Please enter your company name.',f.company);return false}
-    if(!/^\S+@\S+\.\S+$/.test(f.email.value.trim())){err('Please enter a valid business email address.',f.email);return false}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.value.trim())){err('Please enter a valid business email address.',f.email);return false}
+    if(f.phone.value.trim()&&!/^[+\d][\d\s().-]{5,}$/.test(f.phone.value.trim())){err('Please enter a valid contact number, or leave it blank.',f.phone);return false}
+    if(!f.country.value){err('Please select your country.',f.country);return false}
+    if(!f.consent.checked){err('Please tick the box to confirm you agree to us using your details to respond.',f.consent);return false}
     return true}
-  function plain(d){
-    var L=[d.type,'','Name: '+d.name,'Company: '+d.company,'Email: '+d.email,'Country: '+d.country,'','Services: '+(d.services.join(', ')||'—')];
-    if(d.type==='Proposal request'){L.push('Team size: '+(d.teamSize||'—'),'Coverage: '+(d.coverage||'—'),'Languages: '+(d.languages.join(', ')||'—'))}
-    else{L.push('Preferred date: '+(d.preferredDate||'—'),'Preferred time: '+(d.preferredTime||'—'),'Time zone: '+(d.timezone||'—'))}
-    L.push('','Message: '+(d.message||'—'));return L.join('\n')}
-  function done(extra){
-    step=4;show();var m=$('#donemsg');if(extra)m.textContent=extra;
-    var wa=$('#donewa');if(wa){wa.hidden=false}
+  function busy(b){sending=b;var n=$('#wnext');n.disabled=b;n.style.opacity=b?.7:1}
+  function done(d,res){
+    step=4;show();
+    var m=$('#donemsg'),first=(d.name||'').split(' ')[0];
+    m.textContent='Thank you'+(first?', '+first:'')+'. Your '+d.type.toLowerCase()+' has been received (reference '+d.ref+'). '+
+      (res&&res.confirmed?'We have emailed a confirmation to '+d.email+'. ':'Please keep this reference. ')+'Our team will review it and be in touch.';
+    var wa=$('#donewa');if(wa&&(CFG.whatsapp||'').replace(/\D/g,''))wa.hidden=false;
     card.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})}
+  function fail(d,msg){
+    busy(false);
+    err(msg||('We could not send your request just now. Please try again in a moment, or email us at '+(CFG.email||'our business inbox')+' quoting reference '+d.ref+'.'))}
   function submit(){
-    var d=collect();if(d.website){done();return}  /* honeypot */
-    var btn=$('#wnext');btn.disabled=true;btn.style.opacity=.7;
-    function fallback(){
-      var sub=encodeURIComponent('['+d.type+'] '+d.company+' — '+d.name);
-      location.href='mailto:'+(CFG.email||'')+'?subject='+sub+'&body='+encodeURIComponent(plain(d));
-      btn.disabled=false;btn.style.opacity=1;
-      done('Your email app has opened with your request ready to send. Please press send to complete it. You can also message us on WhatsApp.')}
-    if(!CFG.endpoint){fallback();return}
-    var ctl=('AbortController' in window)?new AbortController():null,to=setTimeout(function(){ctl&&ctl.abort()},15000);
-    fetch(CFG.endpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d),signal:ctl?ctl.signal:undefined})
-      .then(function(){clearTimeout(to);btn.disabled=false;btn.style.opacity=1;done()})
-      .catch(function(){clearTimeout(to);btn.disabled=false;btn.style.opacity=1;fallback()});
+    if(sending)return;
+    var ref=form.dataset.ref||(form.dataset.ref=makeRef()),d=collect(ref);
+    if(d.website){done(d);return}  /* honeypot: pretend success, send nothing */
+    if(!CFG.endpoint){fail(d,'Our online enquiry form is being connected. Please email us at '+(CFG.email||'our business inbox')+' for now.');return}
+    busy(true);
+    var ctl=('AbortController' in window)?new AbortController():null,to=setTimeout(function(){ctl&&ctl.abort()},20000);
+    fetch(CFG.endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(d),signal:ctl?ctl.signal:undefined})
+      .then(function(r){return r.json()})
+      .then(function(j){clearTimeout(to);busy(false);if(j&&j.ok){done(d,j)}else{fail(d,j&&j.error==='rate'?'We have received several requests from this address. Please email us directly instead.':null)}})
+      .catch(function(){clearTimeout(to);fail(d)});
   }
   $('#wnext').addEventListener('click',function(){
     clearErr();
-    if(step===1){if(!vals('services').length){err('Please select at least one option to continue.');return}}
+    if(step===1){
+      if(!vals('enquiryType').length){err('Please choose an enquiry type.');return}
+      if(!vals('services').length){err('Please select at least one service.');return}}
     if(step===3){if(!validate3())return;submit();return}
     step++;show();
   });
   $('#wback').addEventListener('click',function(){if(step>1){step--;show()}});
   form.addEventListener('submit',function(e){e.preventDefault();$('#wnext').click()});
-  form.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();$('#wnext').click()}});
-  /* min date today */
-  var dt=form.elements.date;if(dt){var n=new Date();dt.min=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')}
-  /* timezone guess */
+  form.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'&&!(e.target.classList&&e.target.classList.contains('opt'))){e.preventDefault();$('#wnext').click()}});
+  /* min dates = today */
+  var n=new Date(),today=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  ['date','startDate'].forEach(function(k){var el=form.elements[k];if(el)el.min=today});
+  /* time zone guess */
   var tz=form.elements.timezone;try{var g=Intl.DateTimeFormat().resolvedOptions().timeZone;if(g&&tz&&!tz.value)tz.value=g}catch(e){}
-  /* preselect from hash / query: #consultation, ?service=... */
+  /* preselect from hash / query: #consultation, ?type=pilot, ?service=Airline */
   function fromHash(){var h=location.hash.replace('#','');if(h==='consultation'){step=1;setMode('consult')}else if(h==='proposal'){step=1;setMode('proposal')}}
   addEventListener('hashchange',fromHash);
-  var q=new URLSearchParams(location.search).get('service');
+  var qs=new URLSearchParams(location.search),qt=qs.get('type'),q=qs.get('service');
+  if(qt){$$('[data-name="enquiryType"] .opt').forEach(function(o){if(o.dataset.key===qt)o.classList.add('sel')})}
   if(q){$$('[data-name="services"] .opt').forEach(function(o){if(o.textContent.trim().toLowerCase().indexOf(q.toLowerCase())>-1)o.classList.add('sel')})}
   setMode('proposal');fromHash();
 })();

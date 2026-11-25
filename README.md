@@ -48,7 +48,7 @@ In the repo go to Settings > Pages, set Source to **Deploy from a branch**, bran
 
 ```js
 window.ELV_CONFIG = {
-  email: "elevoraoperation@gmail.com",  // shown on the site and used as mailto fallback
+  email: "elvoraoperation@gmail.com",  // shown on the site and used as mailto fallback
   whatsapp: "",   // digits only with country code, e.g. "2348012345678"
   calendly: "",   // booking link; "Book a Consultation" opens it when set
   endpoint: ""    // Google Apps Script /exec URL (see below)
